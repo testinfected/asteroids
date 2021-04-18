@@ -69,8 +69,8 @@ class Asteroids : Application() {
     )
 
     private fun draw(asteroid: Asteroid): Rectangle {
-        return Rectangle(asteroid.pos.x, asteroid.pos.y, 60.0, 60.0).apply {
-            fill = grey
+        return Rectangle(asteroid.pos.x - 30.0, asteroid.pos.y - 30.0, 60.0, 60.0).apply {
+            fill = Color.TRANSPARENT
             stroke = Color.WHITE
             strokeWidth = 2.0
         }
