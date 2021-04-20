@@ -6,14 +6,16 @@ import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import javafx.scene.shape.Polygon
 import javafx.scene.shape.Rectangle
 import javafx.scene.transform.Rotate
-import javafx.scene.transform.Transform
 import javafx.stage.Stage
 import kotlin.random.Random
 
 
-class Asteroid(var pos: Point2D, var angle: Transform)
+class Asteroid(var pos: Point2D, var angle: Double = 0.0)
+
+class Ship(var pos: Point2D, var angle: Double = 0.0)
 
 
 class Asteroids : Application() {
@@ -33,27 +35,39 @@ class Asteroids : Application() {
             actors.children.add(actor)
         }
 
+        val ship = makeShip(scene)
         val asteroids = (1..10).map { makeAsteroid(scene) }.toList()
 
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
                 clearScene()
+                add(drawShip(scene))
                 add(drawAsteroids(scene))
             }
 
             private fun drawAsteroids(scene: Scene): Node {
                 val group = Group()
                 for (asteroid in asteroids) {
-                    move(asteroid, scene)
                     val shape = draw(asteroid)
+                    move(asteroid, scene)
                     group.children.add(shape)
                 }
                 return group
+            }
+
+            private fun drawShip(scene: Scene): Node {
+                val shape = draw(ship)
+                move(ship)
+                return shape
             }
         }
 
         timer.start()
         stage.show()
+    }
+
+    private fun move(ship: Ship) {
+        ship.angle += 1
     }
 
     private fun set(stage: Stage): Pair<Group, Scene> {
@@ -63,9 +77,27 @@ class Asteroids : Application() {
         return Pair(graph, scene)
     }
 
+    private fun makeShip(scene: Scene) = Ship(Point2D.ZERO.midpoint(Point2D(scene.width, scene.height)))
+
+    private fun draw(ship: Ship): Polygon {
+        val shape = Polygon(
+            10.0, 0.0,
+            -10.0, 6.0,
+            -10.0, -6.0
+        ).apply {
+            layoutX = ship.pos.x
+            layoutY = ship.pos.y
+            fill = Color.TRANSPARENT
+            stroke = Color.WHITE
+            strokeWidth = 2.0
+        }
+        shape.transforms.add(Rotate(ship.angle))
+        return shape
+    }
+
     private fun makeAsteroid(scene: Scene) = Asteroid(
         Point2D(Random.nextDouble() * scene.width, Random.nextDouble() * scene.height),
-        Rotate(Random.nextDouble().times(360))
+        Random.nextDouble().times(360)
     )
 
     private fun draw(asteroid: Asteroid): Rectangle {
@@ -81,7 +113,7 @@ class Asteroids : Application() {
     }
 
     private fun step(asteroid: Asteroid): Point2D {
-        val step = asteroid.angle.transform(velocity)
+        val step = Rotate(asteroid.angle).transform(velocity)
         return asteroid.pos.add(step)
     }
 
