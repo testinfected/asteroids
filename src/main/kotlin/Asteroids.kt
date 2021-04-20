@@ -1,9 +1,11 @@
 import javafx.animation.AnimationTimer
 import javafx.application.Application
+import javafx.event.EventHandler
 import javafx.geometry.Point2D
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
+import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.scene.transform.Rotate
@@ -21,12 +23,15 @@ class Asteroids : Application() {
     private val grey: Paint = Color.rgb(40, 40, 50)
     private val velocity = Point2D(1.5, 0.0)
 
+    private val inputs = arrayListOf<KeyCode>()
+
     override fun start(stage: Stage) {
         stage.title = "Asteroids"
 
         val canvas = set(stage)
         val ship = makeShip(canvas)
         val asteroids = (1..10).map { makeAsteroid(canvas) }.toList()
+
 
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
@@ -47,6 +52,14 @@ class Asteroids : Application() {
         val canvas = Canvas(800.0, 600.0)
         val scene = Scene(Group(canvas))
         stage.scene = scene
+        scene.onKeyPressed = EventHandler {
+            if (it.code !in inputs) inputs.add(it.code)
+        }
+
+        scene.onKeyReleased = EventHandler {
+            inputs.remove(it.code)
+        }
+
         return canvas
     }
 
@@ -67,7 +80,12 @@ class Asteroids : Application() {
     }
 
     private fun move(ship: Ship) {
-        ship.angle += 1
+        val delta = when {
+            KeyCode.RIGHT in inputs -> 1
+            KeyCode.LEFT in inputs -> -1
+            else -> 0
+        }
+        ship.angle += delta
     }
 
     private fun makeShip(canvas: Canvas) = Ship(Point2D.ZERO.midpoint(Point2D(canvas.width, canvas.height)))
@@ -89,7 +107,7 @@ class Asteroids : Application() {
         graphics.rotate(ship.angle)
         graphics.strokeLine(dx, 0.0, -dx, dy)
         graphics.strokeLine(-dx, dy, -dx, -dy)
-        graphics.strokeLine(-dx, - dy, dx, 0.0)
+        graphics.strokeLine(-dx, -dy, dx, 0.0)
 
         graphics.restore()
     }
