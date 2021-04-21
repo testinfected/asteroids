@@ -13,22 +13,68 @@ import javafx.stage.Stage
 import kotlin.random.Random
 
 
-class Asteroid(var pos: Point2D, var angle: Double = 0.0)
+class Asteroid(var pos: Point2D, var angle: Double = 0.0, val shape: Array<Point2D>)
 
 class Ship(var pos: Point2D, var angle: Double = 0.0)
 
-val rock = listOf(
-    Point2D(0.0, -2.0),
-    Point2D(2.0, -4.0),
-    Point2D(4.0, -2.0),
-    Point2D(3.0, 0.0),
-    Point2D(4.0, 2.0),
-    Point2D(1.0, 4.0),
-    Point2D(-2.0, 4.0),
-    Point2D(-4.0, 2.0),
-    Point2D(-4.0, -2.0),
-    Point2D(-2.0, -4.0)
-)
+val rocks =
+    arrayOf(
+        arrayOf(
+            Point2D(0.0, -2.0),
+            Point2D(2.0, -4.0),
+            Point2D(4.0, -2.0),
+            Point2D(3.0, 0.0),
+            Point2D(4.0, 2.0),
+            Point2D(1.0, 4.0),
+            Point2D(-2.0, 4.0),
+            Point2D(-4.0, 2.0),
+            Point2D(-4.0, -2.0),
+            Point2D(-2.0, -4.0)
+        ),
+        arrayOf(
+            Point2D(2.0, -1.0),
+            Point2D(4.0, -2.0),
+            Point2D(2.0, -4.0),
+            Point2D(0.0, -3.0),
+            Point2D(-2.0, -4.0),
+            Point2D(-4.0, -2.0),
+            Point2D(-3.0, 0.0),
+            Point2D(-4.0, 2.0),
+            Point2D(-2.0, 4.0),
+            Point2D(-1.0, 3.0),
+            Point2D(2.0, 4.0),
+            Point2D(4.0, 1.0)
+        ),
+        arrayOf(
+            Point2D(-2.0, 0.0),
+            Point2D(-4.0, 1.0),
+            Point2D(-2.0, 4.0),
+            Point2D(0.0, 1.0),
+            Point2D(0.0, 4.0),
+            Point2D(2.0, 4.0),
+            Point2D(4.0, 1.0),
+            Point2D(4.0, -1.0),
+            Point2D(2.0, -4.0),
+            Point2D(-1.0, -4.0),
+            Point2D(-4.0, -1.0),
+            Point2D(-2.0, 0.0),
+        ),
+        arrayOf(
+            Point2D(1.0, 0.0),
+            Point2D(4.0, -1.0),
+            Point2D(4.0, -2.0),
+            Point2D(1.0, -4.0),
+            Point2D(-2.0, -4.0),
+            Point2D(-1.0, -2.0),
+            Point2D(-4.0, -2.0),
+            Point2D(-4.0, 1.0),
+            Point2D(-2.0, 4.0),
+            Point2D(1.0, 3.0),
+            Point2D(2.0, 4.0),
+            Point2D(4.0, 2.0),
+            Point2D(1.0, 0.0)
+        )
+    )
 
 class Asteroids : Application() {
 
@@ -129,8 +175,9 @@ class Asteroids : Application() {
     }
 
     private fun makeAsteroid(canvas: Canvas) = Asteroid(
-        Point2D(Random.nextDouble() * canvas.width, Random.nextDouble() * canvas.height),
-        Random.nextDouble().times(360)
+        pos = Point2D(Random.nextDouble() * canvas.width, Random.nextDouble() * canvas.height),
+        angle = Random.nextDouble().times(360),
+        shape = rocks[Random.nextInt( 4)]
     )
 
     private fun draw(asteroids: List<Asteroid>, canvas: Canvas) {
@@ -155,7 +202,7 @@ class Asteroids : Application() {
         graphics.scale(scale, scale)
 
         graphics.beginPath()
-        rock.forEachIndexed { index, vertex ->
+        asteroid.shape.forEachIndexed { index, vertex ->
             when (index) {
                 0 -> graphics.moveTo(vertex.x, vertex.y)
                 else -> graphics.lineTo(vertex.x, vertex.y)
