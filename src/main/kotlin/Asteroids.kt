@@ -17,6 +17,18 @@ class Asteroid(var pos: Point2D, var angle: Double = 0.0)
 
 class Ship(var pos: Point2D, var angle: Double = 0.0)
 
+val rock = listOf(
+    Point2D(0.0, -2.0),
+    Point2D(2.0, -4.0),
+    Point2D(4.0, -2.0),
+    Point2D(3.0, 0.0),
+    Point2D(4.0, 2.0),
+    Point2D(1.0, 4.0),
+    Point2D(-2.0, 4.0),
+    Point2D(-4.0, 2.0),
+    Point2D(-4.0, -2.0),
+    Point2D(-2.0, -4.0)
+)
 
 class Asteroids : Application() {
 
@@ -49,7 +61,7 @@ class Asteroids : Application() {
     }
 
     private fun set(stage: Stage): Canvas {
-        val canvas = Canvas(800.0, 600.0)
+        val canvas = Canvas(1344.0, 840.0)
         val scene = Scene(Group(canvas))
         stage.scene = scene
         scene.onKeyPressed = EventHandler {
@@ -105,9 +117,13 @@ class Asteroids : Application() {
 
         graphics.translate(ship.pos.x, ship.pos.y)
         graphics.rotate(ship.angle)
-        graphics.strokeLine(dx, 0.0, -dx, dy)
-        graphics.strokeLine(-dx, dy, -dx, -dy)
-        graphics.strokeLine(-dx, -dy, dx, 0.0)
+
+        graphics.beginPath()
+        graphics.moveTo(dx, 0.0)
+        graphics.lineTo(-dx, dy)
+        graphics.lineTo(-dx, -dy)
+        graphics.closePath()
+        graphics.stroke()
 
         graphics.restore()
     }
@@ -128,12 +144,25 @@ class Asteroids : Application() {
         val graphics = canvas.graphicsContext2D
         graphics.save()
 
+        val scale = 10.0
         graphics.apply {
             fill = Color.TRANSPARENT
             stroke = Color.WHITE
-            lineWidth = 2.0
+            lineWidth = 1.0 / scale
         }
-        graphics.strokeRect(asteroid.pos.x - 30.0, asteroid.pos.y - 30.0, 60.0, 60.0)
+
+        graphics.translate(asteroid.pos.x, asteroid.pos.y)
+        graphics.scale(scale, scale)
+
+        graphics.beginPath()
+        rock.forEachIndexed { index, vertex ->
+            when (index) {
+                0 -> graphics.moveTo(vertex.x, vertex.y)
+                else -> graphics.lineTo(vertex.x, vertex.y)
+            }
+        }
+        graphics.closePath()
+        graphics.stroke()
 
         graphics.restore()
     }
