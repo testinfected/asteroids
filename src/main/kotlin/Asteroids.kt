@@ -1,6 +1,7 @@
 import javafx.animation.AnimationTimer
 import javafx.application.Application
 import javafx.event.EventHandler
+import javafx.geometry.Bounds
 import javafx.geometry.Point2D
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -13,7 +14,12 @@ import javafx.stage.Stage
 import kotlin.random.Random
 
 
-class Asteroid(var pos: Point2D, var angle: Double = 0.0, val shape: Array<Point2D>)
+class Asteroid(
+    var pos: Point2D,
+    var angle: Double,
+    var scale: Double,
+    val shape: Array<Point2D>
+)
 
 class Ship(var pos: Point2D, var angle: Double = 0.0)
 
@@ -88,8 +94,7 @@ class Asteroids : Application() {
 
         val canvas = set(stage)
         val ship = makeShip(canvas)
-        val asteroids = (1..10).map { makeAsteroid(canvas) }.toList()
-
+        val asteroids = (1..4).map { makeAsteroid(randomLocation(canvas)) }.toMutableList()
 
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
@@ -174,16 +179,23 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
-    private fun makeAsteroid(canvas: Canvas) = Asteroid(
-        pos = Point2D(Random.nextDouble() * canvas.width, Random.nextDouble() * canvas.height),
+    private fun makeAsteroid(pos: Point2D, scale: Double = 16.0) = Asteroid(
+        pos = pos,
         angle = Random.nextDouble().times(360),
-        shape = rocks[Random.nextInt( 4)]
+        scale,
+        shape = rocks[Random.nextInt(4)]
     )
 
-    private fun draw(asteroids: List<Asteroid>, canvas: Canvas) {
-        for (asteroid in asteroids) {
+    private fun randomLocation(canvas: Canvas) = randomLocation(canvas.layoutBounds)
+
+    private fun randomLocation(bounds: Bounds) =
+        Point2D(Random.nextDouble() * bounds.width + bounds.minX, Random.nextDouble() * bounds.height + bounds.minY)
+
+    private fun draw(asteroids: MutableList<Asteroid>, canvas: Canvas) {
+        for (asteroid in asteroids.toTypedArray()) {
             draw(asteroid, canvas)
             move(asteroid, canvas)
+            split(asteroids, asteroid)
         }
     }
 
@@ -191,15 +203,14 @@ class Asteroids : Application() {
         val graphics = canvas.graphicsContext2D
         graphics.save()
 
-        val scale = 10.0
         graphics.apply {
             fill = Color.TRANSPARENT
             stroke = Color.WHITE
-            lineWidth = 1.0 / scale
+            lineWidth = 1.0 / asteroid.scale
         }
 
         graphics.translate(asteroid.pos.x, asteroid.pos.y)
-        graphics.scale(scale, scale)
+        graphics.scale(asteroid.scale, asteroid.scale)
 
         graphics.beginPath()
         asteroid.shape.forEachIndexed { index, vertex ->
@@ -216,6 +227,18 @@ class Asteroids : Application() {
 
     private fun move(asteroid: Asteroid, canvas: Canvas) {
         asteroid.pos = warp(step(asteroid), Point2D(canvas.width, canvas.height))
+    }
+
+    private fun split(asteroids: MutableList<Asteroid>, asteroid: Asteroid) {
+        if (Random.nextInt(until = 960) != 1) return
+        if (asteroid.scale == 4.0) return
+
+        val parts = (1..2).map {
+            makeAsteroid(asteroid.pos, scale = asteroid.scale / 2)
+        }
+
+        asteroids -= asteroid
+        asteroids += parts
     }
 
     private fun step(asteroid: Asteroid): Point2D {
