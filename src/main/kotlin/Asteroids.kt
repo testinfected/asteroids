@@ -32,6 +32,7 @@ class Asteroid(
 class Splat(
     val pos: Point2D,
     val born: Long,
+    val angle: Double,
     val shape: Array<Point2D>,
 )
 
@@ -213,7 +214,7 @@ class Asteroids : Application() {
 
     private fun makeAsteroid(pos: Point2D, scale: Double = 16.0) = Asteroid(
         pos = pos,
-        angle = Random.nextDouble().times(360),
+        angle = Random.nextDouble(360.0),
         scale,
         shape = rocks[Random.nextInt(4)]
     )
@@ -280,7 +281,7 @@ class Asteroids : Application() {
 
         asteroids -= asteroid
         asteroids += parts
-        splats += Splat(asteroid.pos, born = now, shape = splat)
+        splats += Splat(asteroid.pos, born = now, shape = splat, angle = Random.nextDouble(360.0))
     }
 
     private fun drawSplats(now: Long, canvas: Canvas) {
@@ -293,18 +294,16 @@ class Asteroids : Application() {
         graphics.save()
 
         graphics.apply {
-            stroke = Color.WHITE
             fill = Color.WHITE
-            lineWidth = 0.5
         }
 
         graphics.translate(splat.pos.x, splat.pos.y)
         graphics.scale(2.0, 2.0)
+        graphics.rotate(splat.angle)
 
         val size = 1 + (now - splat.born).toDuration(DurationUnit.NANOSECONDS).inSeconds
-
         splat.shape.forEach { point ->
-            graphics.strokeOval(point.x * size, point.y * size, 1.0, 1.0)
+            graphics.fillOval(point.x * size, point.y * size, 2/size, 2/size)
         }
 
         if (size > 5) splats -= splat
