@@ -12,99 +12,103 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.scene.transform.Rotate
 import javafx.stage.Stage
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.random.Random
-import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
 
-class Ship(var pos: Point2D, var angle: Double = 0.0)
+typealias Vector = Point2D
+
+class Ship(var pos: Vector, var angle: Double = 0.0) {
+    var firing = false
+}
+
+class Missile(var pos: Vector, val velocity: Vector)
 
 class Asteroid(
-    var pos: Point2D,
-    var angle: Double,
+    var pos: Vector,
     var scale: Double,
-    val shape: Array<Point2D>
+    val velocity: Vector,
+    val shape: Array<Vector>
 )
 
 class Splat(
-    val pos: Point2D,
+    val pos: Vector,
     val born: Long,
     val angle: Double,
-    val shape: Array<Point2D>,
+    val shape: Array<Vector>,
 )
 
 val splat = arrayOf(
-    Point2D(-2.0, 0.0),
-    Point2D(-2.0, -2.0),
-    Point2D(2.0, -2.0),
-    Point2D(3.0, 1.0),
-    Point2D(2.0, -1.0),
-    Point2D(0.0, 2.0),
-    Point2D(1.0, 3.0),
-    Point2D(-1.0, 3.0),
-    Point2D(-4.0, -1.0),
-    Point2D(-3.0, .0),
+    Vector(-2.0, 0.0),
+    Vector(-2.0, -2.0),
+    Vector(2.0, -2.0),
+    Vector(3.0, 1.0),
+    Vector(2.0, -1.0),
+    Vector(0.0, 2.0),
+    Vector(1.0, 3.0),
+    Vector(-1.0, 3.0),
+    Vector(-4.0, -1.0),
+    Vector(-3.0, .0),
 )
 
 val rocks =
     arrayOf(
         arrayOf(
-            Point2D(0.0, -2.0),
-            Point2D(2.0, -4.0),
-            Point2D(4.0, -2.0),
-            Point2D(3.0, 0.0),
-            Point2D(4.0, 2.0),
-            Point2D(1.0, 4.0),
-            Point2D(-2.0, 4.0),
-            Point2D(-4.0, 2.0),
-            Point2D(-4.0, -2.0),
-            Point2D(-2.0, -4.0)
+            Vector(0.0, -2.0),
+            Vector(2.0, -4.0),
+            Vector(4.0, -2.0),
+            Vector(3.0, 0.0),
+            Vector(4.0, 2.0),
+            Vector(1.0, 4.0),
+            Vector(-2.0, 4.0),
+            Vector(-4.0, 2.0),
+            Vector(-4.0, -2.0),
+            Vector(-2.0, -4.0)
         ),
         arrayOf(
-            Point2D(2.0, -1.0),
-            Point2D(4.0, -2.0),
-            Point2D(2.0, -4.0),
-            Point2D(0.0, -3.0),
-            Point2D(-2.0, -4.0),
-            Point2D(-4.0, -2.0),
-            Point2D(-3.0, 0.0),
-            Point2D(-4.0, 2.0),
-            Point2D(-2.0, 4.0),
-            Point2D(-1.0, 3.0),
-            Point2D(2.0, 4.0),
-            Point2D(4.0, 1.0)
+            Vector(2.0, -1.0),
+            Vector(4.0, -2.0),
+            Vector(2.0, -4.0),
+            Vector(0.0, -3.0),
+            Vector(-2.0, -4.0),
+            Vector(-4.0, -2.0),
+            Vector(-3.0, 0.0),
+            Vector(-4.0, 2.0),
+            Vector(-2.0, 4.0),
+            Vector(-1.0, 3.0),
+            Vector(2.0, 4.0),
+            Vector(4.0, 1.0)
         ),
         arrayOf(
-            Point2D(-2.0, 0.0),
-            Point2D(-4.0, 1.0),
-            Point2D(-2.0, 4.0),
-            Point2D(0.0, 1.0),
-            Point2D(0.0, 4.0),
-            Point2D(2.0, 4.0),
-            Point2D(4.0, 1.0),
-            Point2D(4.0, -1.0),
-            Point2D(2.0, -4.0),
-            Point2D(-1.0, -4.0),
-            Point2D(-4.0, -1.0),
-            Point2D(-2.0, 0.0),
+            Vector(-2.0, 0.0),
+            Vector(-4.0, 1.0),
+            Vector(-2.0, 4.0),
+            Vector(0.0, 1.0),
+            Vector(0.0, 4.0),
+            Vector(2.0, 4.0),
+            Vector(4.0, 1.0),
+            Vector(4.0, -1.0),
+            Vector(2.0, -4.0),
+            Vector(-1.0, -4.0),
+            Vector(-4.0, -1.0),
+            Vector(-2.0, 0.0),
         ),
         arrayOf(
-            Point2D(1.0, 0.0),
-            Point2D(4.0, -1.0),
-            Point2D(4.0, -2.0),
-            Point2D(1.0, -4.0),
-            Point2D(-2.0, -4.0),
-            Point2D(-1.0, -2.0),
-            Point2D(-4.0, -2.0),
-            Point2D(-4.0, 1.0),
-            Point2D(-2.0, 4.0),
-            Point2D(1.0, 3.0),
-            Point2D(2.0, 4.0),
-            Point2D(4.0, 2.0),
-            Point2D(1.0, 0.0)
+            Vector(1.0, 0.0),
+            Vector(4.0, -1.0),
+            Vector(4.0, -2.0),
+            Vector(1.0, -4.0),
+            Vector(-2.0, -4.0),
+            Vector(-1.0, -2.0),
+            Vector(-4.0, -2.0),
+            Vector(-4.0, 1.0),
+            Vector(-2.0, 4.0),
+            Vector(1.0, 3.0),
+            Vector(2.0, 4.0),
+            Vector(4.0, 2.0),
+            Vector(1.0, 0.0)
         )
     )
 
@@ -112,12 +116,12 @@ val rocks =
 class Asteroids : Application() {
 
     private val grey: Paint = Color.rgb(40, 40, 50)
-    private val velocity = Point2D(1.5, 0.0)
 
     private val inputs = arrayListOf<KeyCode>()
 
     val asteroids = mutableListOf<Asteroid>()
     val splats = mutableListOf<Splat>()
+    val missiles = mutableListOf<Missile>()
 
     override fun start(stage: Stage) {
         stage.title = "Asteroids"
@@ -131,9 +135,9 @@ class Asteroids : Application() {
                 save(canvas)
                 clear(canvas)
                 draw(ship, canvas)
-                move(ship)
+                drawMissiles(canvas)
+                handleInputs(ship)
                 drawAsteroids(canvas)
-                moveAsteroids(canvas)
                 splitAsteroids(now)
                 drawSplats(now, canvas)
                 restore(canvas)
@@ -175,25 +179,34 @@ class Asteroids : Application() {
         canvas.graphicsContext2D.save()
     }
 
-    private fun move(ship: Ship) {
-        val delta = when {
-            KeyCode.RIGHT in inputs -> 1
-            KeyCode.LEFT in inputs -> -1
-            else -> 0
-        }
-        ship.angle += delta
+    private fun handleInputs(ship: Ship) {
+        if (KeyCode.RIGHT in inputs) ship.angle += 1
+        if (KeyCode.LEFT in inputs) ship.angle -= 1
+        if (KeyCode.SPACE in inputs && !ship.firing) fireMissile(ship)
+        if (KeyCode.SPACE !in inputs) ship.firing = false
     }
 
-    private fun makeShip(bounds: Bounds) = Ship(Point2D(bounds.centerX, bounds.centerY))
+    private fun fireMissile(ship: Ship) {
+        ship.firing = true
+        missiles += makeMissile(ship)
+    }
 
-    private fun draw(ship: Ship, canvas: Canvas) {
-        val graphics = canvas.graphicsContext2D
+    private fun makeShip(bounds: Bounds) = Ship(Vector(bounds.centerX, bounds.centerY))
+
+    private fun makeMissile(ship: Ship) = Missile(
+        ship.pos,
+        Rotate(ship.angle).transform(Vector(2.0, 0.0))
+    )
+
+    private fun draw(ship: Ship, canvas: Canvas) = draw(ship, canvas.graphicsContext2D)
+
+    private fun draw(ship: Ship, graphics: GraphicsContext) {
         graphics.save()
 
         graphics.apply {
             fill = Color.TRANSPARENT
             stroke = Color.WHITE
-            lineWidth = 2.0
+            lineWidth = 1.0
         }
 
         val dx = 10.0
@@ -212,24 +225,49 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
-    private fun makeAsteroid(pos: Point2D, scale: Double = 16.0) = Asteroid(
+    private fun drawMissiles(canvas: Canvas) {
+        for (missile in missiles) {
+            drawMissile(missile, canvas)
+            move(missile)
+        }
+    }
+
+    private fun drawMissile(missile: Missile, canvas: Canvas) = drawMissile(missile, canvas.graphicsContext2D)
+
+    private fun drawMissile(missile: Missile, graphics: GraphicsContext) {
+        graphics.save()
+
+        graphics.apply {
+            fill = Color.WHITE
+        }
+
+        graphics.translate(missile.pos.x, missile.pos.y)
+        graphics.fillOval(-1.0, -1.0, 2.0, 2.0)
+
+        graphics.restore()
+    }
+
+    private fun move(missile: Missile) {
+        missile.pos = missile.pos.add(missile.velocity)
+    }
+
+    private fun makeAsteroid(pos: Vector, scale: Double = 16.0) = Asteroid(
         pos = pos,
-        angle = Random.nextDouble(360.0),
         scale,
+        Rotate(Random.nextDouble(360.0)).transform(Vector(1.5, 0.0)),
         shape = rocks[Random.nextInt(4)]
     )
 
     private fun randomLocationOn(canvas: Canvas) = randomLocationWithin(canvas.layoutBounds)
 
     private fun randomLocationWithin(bounds: Bounds) =
-        Point2D(Random.nextDouble() * bounds.width + bounds.minX, Random.nextDouble() * bounds.height + bounds.minY)
+        Vector(Random.nextDouble() * bounds.width + bounds.minX, Random.nextDouble() * bounds.height + bounds.minY)
 
     private fun drawAsteroids(canvas: Canvas) {
-        for (asteroid in asteroids) draw(asteroid, canvas)
-    }
-
-    private fun moveAsteroids(canvas: Canvas) {
-        for (asteroid in asteroids) move(asteroid, canvas)
+        for (asteroid in asteroids) {
+            draw(asteroid, canvas)
+            move(asteroid, canvas)
+        }
     }
 
     private fun splitAsteroids(now: Long) {
@@ -268,7 +306,7 @@ class Asteroids : Application() {
     private fun move(asteroid: Asteroid, canvas: Canvas): Unit = move(asteroid, canvas.layoutBounds)
 
     private fun move(asteroid: Asteroid, bounds: Bounds) {
-        asteroid.pos = warp(step(asteroid), Point2D(bounds.maxX, bounds.maxY))
+        asteroid.pos = warp(step(asteroid), Vector(bounds.maxX, bounds.maxY))
     }
 
     private fun split(asteroid: Asteroid, now: Long) {
@@ -303,7 +341,7 @@ class Asteroids : Application() {
 
         val size = 1 + (now - splat.born).toDuration(DurationUnit.NANOSECONDS).inSeconds
         splat.shape.forEach { point ->
-            graphics.fillOval(point.x * size, point.y * size, 2/size, 2/size)
+            graphics.fillOval(point.x * size, point.y * size, 2 / size, 2 / size)
         }
 
         if (size > 5) splats -= splat
@@ -311,9 +349,8 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
-    private fun step(asteroid: Asteroid): Point2D {
-        val step = Rotate(asteroid.angle).transform(velocity)
-        return asteroid.pos.add(step)
+    private fun step(asteroid: Asteroid): Vector {
+        return asteroid.pos.add(asteroid.velocity)
     }
 
     companion object {
@@ -325,8 +362,8 @@ class Asteroids : Application() {
 }
 
 
-fun warp(pos: Point2D, bounds: Point2D): Point2D {
-    return Point2D(warp(pos.x, bounds.x), warp(pos.y, bounds.y))
+fun warp(pos: Vector, bounds: Vector): Vector {
+    return Vector(warp(pos.x, bounds.x), warp(pos.y, bounds.y))
 }
 
 fun warp(value: Double, bound: Double): Double {
