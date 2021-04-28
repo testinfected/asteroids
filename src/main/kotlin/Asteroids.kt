@@ -138,8 +138,8 @@ class Asteroids : Application() {
                 draw(ship, canvas)
                 drawAsteroids(canvas)
                 drawMissiles(now, canvas)
+                findCollisions(missiles, asteroids, now)
                 drawSplats(now, canvas)
-                splitAsteroids(now)
                 restore(canvas)
             }
         }
@@ -273,12 +273,6 @@ class Asteroids : Application() {
         }
     }
 
-    private fun splitAsteroids(now: Long) {
-        for (asteroid in asteroids.toTypedArray()) {
-            split(asteroid, now)
-        }
-    }
-
     private fun draw(asteroid: Asteroid, canvas: Canvas): Unit = draw(asteroid, canvas.graphicsContext2D)
 
     private fun draw(asteroid: Asteroid, graphics: GraphicsContext) {
@@ -313,16 +307,21 @@ class Asteroids : Application() {
     }
 
     private fun split(asteroid: Asteroid, now: Long) {
-        if (Random.nextInt(until = 960) != 1) return
-        if (asteroid.scale == 4.0) return
+        makeSplat(asteroid.pos, now)
+        kill(asteroid)
+
+        if (asteroid.scale == 4.0) {
+            return
+        }
 
         val parts = (1..2).map {
             makeAsteroid(asteroid.pos, scale = asteroid.scale / 2)
         }
-
-        asteroids -= asteroid
         asteroids += parts
-        splats += Splat(asteroid.pos, born = now, shape = splat, angle = Random.nextDouble(360.0))
+    }
+
+    private fun makeSplat(pos: Vector, now: Long) {
+        splats += Splat(pos, born = now, shape = splat, angle = Random.nextDouble(360.0))
     }
 
     private fun drawSplats(now: Long, canvas: Canvas) {
@@ -352,12 +351,26 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
+    private fun kill(asteroid: Asteroid) {
+        asteroids -= asteroid
+    }
+
     private fun kill(splat: Splat) {
         splats -= splat
     }
 
     private fun kill(missile: Missile) {
         missiles -= missile
+    }
+
+    private fun findCollisions(missiles: Collection<Missile>, asteroids: Collection<Asteroid>, now: Long) {
+        val killDistance = 50.0
+        missiles.zip(asteroids).forEach { (missile, asteroid) ->
+            if (missile.pos.distance(asteroid.pos) < killDistance) {
+                split(asteroid, now)
+                kill(missile)
+            }
+        }
     }
 
     private fun step(asteroid: Asteroid): Vector {
