@@ -24,7 +24,7 @@ class Ship(var pos: Vector, var angle: Double = 0.0) {
     var firing = false
 }
 
-class Missile(var pos: Vector, val velocity: Vector)
+class Missile(var pos: Vector, val velocity: Vector, val born: Long)
 
 class Asteroid(
     var pos: Vector,
@@ -134,12 +134,12 @@ class Asteroids : Application() {
             override fun handle(now: Long) {
                 save(canvas)
                 clear(canvas)
+                handleInputs(ship, now)
                 draw(ship, canvas)
-                drawMissiles(canvas)
-                handleInputs(ship)
                 drawAsteroids(canvas)
-                splitAsteroids(now)
+                drawMissiles(now, canvas)
                 drawSplats(now, canvas)
+                splitAsteroids(now)
                 restore(canvas)
             }
         }
@@ -179,23 +179,24 @@ class Asteroids : Application() {
         canvas.graphicsContext2D.save()
     }
 
-    private fun handleInputs(ship: Ship) {
+    private fun handleInputs(ship: Ship, now: Long) {
         if (KeyCode.RIGHT in inputs) ship.angle += 1
         if (KeyCode.LEFT in inputs) ship.angle -= 1
-        if (KeyCode.SPACE in inputs && !ship.firing) fireMissile(ship)
+        if (KeyCode.SPACE in inputs && !ship.firing) fireMissile(ship, now)
         if (KeyCode.SPACE !in inputs) ship.firing = false
     }
 
-    private fun fireMissile(ship: Ship) {
+    private fun fireMissile(ship: Ship, now: Long) {
         ship.firing = true
-        missiles += makeMissile(ship)
+        missiles += makeMissile(ship, now)
     }
 
     private fun makeShip(bounds: Bounds) = Ship(Vector(bounds.centerX, bounds.centerY))
 
-    private fun makeMissile(ship: Ship) = Missile(
+    private fun makeMissile(ship: Ship, now: Long) = Missile(
         ship.pos,
-        Rotate(ship.angle).transform(Vector(2.0, 0.0))
+        Rotate(ship.angle).transform(Vector(2.0, 0.0)),
+        born = now
     )
 
     private fun draw(ship: Ship, canvas: Canvas) = draw(ship, canvas.graphicsContext2D)
@@ -225,16 +226,16 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
-    private fun drawMissiles(canvas: Canvas) {
-        for (missile in missiles) {
-            drawMissile(missile, canvas)
+    private fun drawMissiles(now: Long, canvas: Canvas) {
+        for (missile in missiles.toTypedArray()) {
+            drawMissile(missile, now, canvas)
             move(missile)
         }
     }
 
-    private fun drawMissile(missile: Missile, canvas: Canvas) = drawMissile(missile, canvas.graphicsContext2D)
+    private fun drawMissile(missile: Missile, now: Long, canvas: Canvas) = drawMissile(missile, now, canvas.graphicsContext2D)
 
-    private fun drawMissile(missile: Missile, graphics: GraphicsContext) {
+    private fun drawMissile(missile: Missile, now: Long, graphics: GraphicsContext) {
         graphics.save()
 
         graphics.apply {
@@ -245,6 +246,8 @@ class Asteroids : Application() {
         graphics.fillOval(-1.0, -1.0, 2.0, 2.0)
 
         graphics.restore()
+
+        if ((now - missile.born).toDuration(DurationUnit.NANOSECONDS).inSeconds > 3) kill(missile)
     }
 
     private fun move(missile: Missile) {
@@ -344,9 +347,17 @@ class Asteroids : Application() {
             graphics.fillOval(point.x * size, point.y * size, 2 / size, 2 / size)
         }
 
-        if (size > 5) splats -= splat
+        if (size > 5) kill(splat)
 
         graphics.restore()
+    }
+
+    private fun kill(splat: Splat) {
+        splats -= splat
+    }
+
+    private fun kill(missile: Missile) {
+        missiles -= missile
     }
 
     private fun step(asteroid: Asteroid): Vector {
