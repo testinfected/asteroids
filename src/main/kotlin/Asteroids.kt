@@ -2,7 +2,6 @@ import javafx.animation.AnimationTimer
 import javafx.application.Application
 import javafx.event.EventHandler
 import javafx.geometry.Bounds
-import javafx.geometry.Point2D
 import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
@@ -18,10 +17,12 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
 
-typealias Vector = Point2D
-
 class Ship(var pos: Vector, var angle: Double = 0.0) {
     var firing = false
+
+    companion object {
+        fun spawnAt(pos: Vector) = Ship(pos)
+    }
 }
 
 class Missile(var pos: Vector, val velocity: Vector, val born: Long)
@@ -31,7 +32,21 @@ class Asteroid(
     var scale: Double,
     val velocity: Vector,
     val shape: Array<Vector>
-)
+) {
+
+    fun update(space: Space) {
+        pos = space.warp(pos.add(velocity))
+    }
+
+    companion object {
+        fun spawnAt(pos: Vector, scale: Double) = Asteroid(
+            pos,
+            scale,
+            velocity = Rotate(Random.nextDouble(360.0)).transform(Vector(1.5, 0.0)),
+            shape = rocks[Random.nextInt(4)]
+        )
+    }
+}
 
 class Splat(
     val pos: Vector,
@@ -41,76 +56,85 @@ class Splat(
 )
 
 val splat = arrayOf(
-    Vector(-2.0, 0.0),
-    Vector(-2.0, -2.0),
-    Vector(2.0, -2.0),
-    Vector(3.0, 1.0),
-    Vector(2.0, -1.0),
-    Vector(0.0, 2.0),
-    Vector(1.0, 3.0),
-    Vector(-1.0, 3.0),
-    Vector(-4.0, -1.0),
-    Vector(-3.0, .0),
+    v(-2, 0),
+    v(-2, -2),
+    v(2, -2),
+    v(3, 1),
+    v(2, -1),
+    v(0, 2),
+    v(1, 3),
+    v(-1, 3),
+    v(-4, -1),
+    v(-3, 0),
 )
 
 val rocks =
     arrayOf(
         arrayOf(
-            Vector(0.0, -2.0),
-            Vector(2.0, -4.0),
-            Vector(4.0, -2.0),
-            Vector(3.0, 0.0),
-            Vector(4.0, 2.0),
-            Vector(1.0, 4.0),
-            Vector(-2.0, 4.0),
-            Vector(-4.0, 2.0),
-            Vector(-4.0, -2.0),
-            Vector(-2.0, -4.0)
+            v(0, -2),
+            v(2, -4),
+            v(4, -2),
+            v(3, 0),
+            v(4, 2),
+            v(1, 4),
+            v(-2, 4),
+            v(-4, 2),
+            v(-4, -2),
+            v(-2, -4)
         ),
         arrayOf(
-            Vector(2.0, -1.0),
-            Vector(4.0, -2.0),
-            Vector(2.0, -4.0),
-            Vector(0.0, -3.0),
-            Vector(-2.0, -4.0),
-            Vector(-4.0, -2.0),
-            Vector(-3.0, 0.0),
-            Vector(-4.0, 2.0),
-            Vector(-2.0, 4.0),
-            Vector(-1.0, 3.0),
-            Vector(2.0, 4.0),
-            Vector(4.0, 1.0)
+            v(2, -1),
+            v(4, -2),
+            v(2, -4),
+            v(0, -3),
+            v(-2, -4),
+            v(-4, -2),
+            v(-3, 0),
+            v(-4, 2),
+            v(-2, 4),
+            v(-1, 3),
+            v(2, 4),
+            v(4, 1)
         ),
         arrayOf(
-            Vector(-2.0, 0.0),
-            Vector(-4.0, 1.0),
-            Vector(-2.0, 4.0),
-            Vector(0.0, 1.0),
-            Vector(0.0, 4.0),
-            Vector(2.0, 4.0),
-            Vector(4.0, 1.0),
-            Vector(4.0, -1.0),
-            Vector(2.0, -4.0),
-            Vector(-1.0, -4.0),
-            Vector(-4.0, -1.0),
-            Vector(-2.0, 0.0),
+            v(-2, 0),
+            v(-4, 1),
+            v(-2, 4),
+            v(0, 1),
+            v(0, 4),
+            v(2, 4),
+            v(4, 1),
+            v(4, -1),
+            v(2, -4),
+            v(-1, -4),
+            v(-4, -1),
+            v(-2, 0),
         ),
         arrayOf(
-            Vector(1.0, 0.0),
-            Vector(4.0, -1.0),
-            Vector(4.0, -2.0),
-            Vector(1.0, -4.0),
-            Vector(-2.0, -4.0),
-            Vector(-1.0, -2.0),
-            Vector(-4.0, -2.0),
-            Vector(-4.0, 1.0),
-            Vector(-2.0, 4.0),
-            Vector(1.0, 3.0),
-            Vector(2.0, 4.0),
-            Vector(4.0, 2.0),
-            Vector(1.0, 0.0)
+            v(1, 0),
+            v(4, -1),
+            v(4, -2),
+            v(1, -4),
+            v(-2, -4),
+            v(-1, -2),
+            v(-4, -2),
+            v(-4, 1),
+            v(-2, 4),
+            v(1, 3),
+            v(2, 4),
+            v(4, 2),
+            v(1, 0)
         )
     )
+
+
+class Space(private val bounds: Bounds) {
+    val center get() = bounds.center
+
+    fun randomLocation() = randomLocationWithin(bounds)
+
+    fun warp(pos: Vector) = pos.warp(bounds.max)
+}
 
 @ExperimentalTime
 class Asteroids : Application() {
@@ -127,8 +151,10 @@ class Asteroids : Application() {
         stage.title = "Asteroids"
 
         val canvas = set(stage)
-        val ship = makeShip(canvas.layoutBounds)
-        asteroids += (1..4).map { makeAsteroid(randomLocationOn(canvas)) }
+        val space = Space(bounds = canvas.layoutBounds)
+
+        val ship = Ship.spawnAt(pos = space.center)
+        asteroids += (1..4).map { Asteroid.spawnAt(space.randomLocation(), 16.0) }
 
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
@@ -136,7 +162,7 @@ class Asteroids : Application() {
                 clear(canvas)
                 handleInputs(ship, now)
                 draw(ship, canvas)
-                drawAsteroids(canvas)
+                drawAsteroids(canvas, space)
                 drawMissiles(now, canvas)
                 findCollisions(missiles, asteroids, now)
                 drawSplats(now, canvas)
@@ -191,11 +217,9 @@ class Asteroids : Application() {
         missiles += makeMissile(ship, now)
     }
 
-    private fun makeShip(bounds: Bounds) = Ship(Vector(bounds.centerX, bounds.centerY))
-
     private fun makeMissile(ship: Ship, now: Long) = Missile(
         ship.pos,
-        Rotate(ship.angle).transform(Vector(2.0, 0.0)),
+        Rotate(ship.angle).transform(v(2, 0)),
         born = now
     )
 
@@ -233,7 +257,8 @@ class Asteroids : Application() {
         }
     }
 
-    private fun drawMissile(missile: Missile, now: Long, canvas: Canvas) = drawMissile(missile, now, canvas.graphicsContext2D)
+    private fun drawMissile(missile: Missile, now: Long, canvas: Canvas) =
+        drawMissile(missile, now, canvas.graphicsContext2D)
 
     private fun drawMissile(missile: Missile, now: Long, graphics: GraphicsContext) {
         graphics.save()
@@ -254,22 +279,10 @@ class Asteroids : Application() {
         missile.pos = missile.pos.add(missile.velocity)
     }
 
-    private fun makeAsteroid(pos: Vector, scale: Double = 16.0) = Asteroid(
-        pos = pos,
-        scale,
-        Rotate(Random.nextDouble(360.0)).transform(Vector(1.5, 0.0)),
-        shape = rocks[Random.nextInt(4)]
-    )
-
-    private fun randomLocationOn(canvas: Canvas) = randomLocationWithin(canvas.layoutBounds)
-
-    private fun randomLocationWithin(bounds: Bounds) =
-        Vector(Random.nextDouble() * bounds.width + bounds.minX, Random.nextDouble() * bounds.height + bounds.minY)
-
-    private fun drawAsteroids(canvas: Canvas) {
+    private fun drawAsteroids(canvas: Canvas, space: Space) {
         for (asteroid in asteroids) {
             draw(asteroid, canvas)
-            move(asteroid, canvas)
+            moveAsteroid(asteroid, space)
         }
     }
 
@@ -300,11 +313,7 @@ class Asteroids : Application() {
         graphics.restore()
     }
 
-    private fun move(asteroid: Asteroid, canvas: Canvas): Unit = move(asteroid, canvas.layoutBounds)
-
-    private fun move(asteroid: Asteroid, bounds: Bounds) {
-        asteroid.pos = warp(step(asteroid), Vector(bounds.maxX, bounds.maxY))
-    }
+    private fun moveAsteroid(asteroid: Asteroid, space: Space) = asteroid.update(space)
 
     private fun split(asteroid: Asteroid, now: Long) {
         makeSplat(asteroid.pos, now)
@@ -315,7 +324,7 @@ class Asteroids : Application() {
         }
 
         val parts = (1..2).map {
-            makeAsteroid(asteroid.pos, scale = asteroid.scale / 2)
+            Asteroid.spawnAt(asteroid.pos, scale = asteroid.scale / 2)
         }
         asteroids += parts
     }
@@ -373,23 +382,11 @@ class Asteroids : Application() {
         }
     }
 
-    private fun step(asteroid: Asteroid): Vector {
-        return asteroid.pos.add(asteroid.velocity)
-    }
-
     companion object {
         @JvmStatic
         fun main(vararg args: String) {
             launch(Asteroids::class.java, *args)
         }
+
     }
-}
-
-
-fun warp(pos: Vector, bounds: Vector): Vector {
-    return Vector(warp(pos.x, bounds.x), warp(pos.y, bounds.y))
-}
-
-fun warp(value: Double, bound: Double): Double {
-    return (value + bound) % bound
 }
