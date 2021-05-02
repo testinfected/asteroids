@@ -12,10 +12,12 @@ class Space(private val bounds: Bounds) {
 
     fun warp(pos: Vector) = pos.warp(bounds.max)
 
-    fun clear(graphics: GraphicsContext) {
-        graphics.fill = grey
-        graphics.fillRect(0.0, 0.0, bounds.width, bounds.height)
+    fun clear(stencil: Stencil) = stencil {
+        fill = grey
+        fillRect(0.0, 0.0, bounds.width, bounds.height)
     }
+
+    fun renderShip(stencil: Stencil) = ship.render(stencil)
 
     companion object {
         val grey: Paint = Color.rgb(40, 40, 50)

@@ -1,31 +1,28 @@
-import javafx.scene.canvas.GraphicsContext
 import javafx.scene.paint.Color
 
 class Ship(var pos: Vector, var angle: Double = 0.0) {
     var firing = false
 
-    fun render(graphics: GraphicsContext) {
-        graphics.apply {
-            fill = Color.TRANSPARENT
-            stroke = Color.WHITE
-            lineWidth = 1.0
-        }
+    fun render(stencil: Stencil) = stencil {
+        fill = Color.TRANSPARENT
+        stroke = Color.WHITE
+        lineWidth = 1.0
 
-        val dx = 10.0
-        val dy = 6.0
+        translate(pos.x, pos.y)
+        rotate(angle)
 
-        graphics.translate(pos.x, pos.y)
-        graphics.rotate(angle)
-
-        graphics.beginPath()
-        graphics.moveTo(dx, 0.0)
-        graphics.lineTo(-dx, dy)
-        graphics.lineTo(-dx, -dy)
-        graphics.closePath()
-        graphics.stroke()
+        beginPath()
+        moveTo(dx, 0.0)
+        lineTo(-dx, dy)
+        lineTo(-dx, -dy)
+        closePath()
+        stroke()
     }
 
     companion object {
+        private const val dx = 10.0
+        private const val dy = 6.0
+
         fun spawnAt(pos: Vector) = Ship(pos)
     }
 }

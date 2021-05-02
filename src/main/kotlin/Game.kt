@@ -7,7 +7,6 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
-import javafx.scene.paint.Paint
 import javafx.scene.transform.Rotate
 import javafx.stage.Stage
 import kotlin.random.Random
@@ -33,17 +32,17 @@ class Game : Application() {
 
         asteroids += (1..4).map { Asteroid.spawnAt(space.randomLocation(), 16.0) }
 
+        val stencil = canvas.stencil
+
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
-                save(canvas)
-                space.clear(canvas.graphicsContext2D)
                 handleInputs(space.ship, now)
-                draw(space.ship, canvas)
-                drawAsteroids(canvas, space)
-                drawMissiles(now, canvas)
+                space.clear(stencil)
+                space.renderShip(stencil)
+                drawAsteroids(stencil, space)
+                drawMissiles(now, stencil)
                 findCollisions(missiles, asteroids, now)
-                drawSplats(now, canvas)
-                restore(canvas)
+                drawSplats(now, stencil)
             }
         }
 
@@ -66,14 +65,6 @@ class Game : Application() {
         return canvas
     }
 
-    private fun restore(canvas: Canvas) {
-        canvas.graphicsContext2D.restore()
-    }
-
-    private fun save(canvas: Canvas) {
-        canvas.graphicsContext2D.save()
-    }
-
     private fun handleInputs(ship: Ship, now: Long) {
         if (KeyCode.RIGHT in inputs) ship.angle += 1
         if (KeyCode.LEFT in inputs) ship.angle -= 1
@@ -92,35 +83,19 @@ class Game : Application() {
         born = now
     )
 
-    private fun draw(ship: Ship, canvas: Canvas) = draw(ship, canvas.graphicsContext2D)
-
-    private fun draw(ship: Ship, graphics: GraphicsContext) {
-        graphics.save()
-        ship.render(graphics)
-        graphics.restore()
-    }
-
-    private fun drawMissiles(now: Long, canvas: Canvas) {
+    private fun drawMissiles(now: Long, stencil: Stencil) {
         for (missile in missiles.toTypedArray()) {
-            drawMissile(missile, now, canvas)
+            drawMissile(missile, now, stencil)
             move(missile)
         }
     }
 
-    private fun drawMissile(missile: Missile, now: Long, canvas: Canvas) =
-        drawMissile(missile, now, canvas.graphicsContext2D)
+    private fun drawMissile(missile: Missile, now: Long, stencil: Stencil) = stencil {
+        fill = Color.WHITE
+        translate(missile.pos.x, missile.pos.y)
+        fillOval(-1.0, -1.0, 2.0, 2.0)
 
-    private fun drawMissile(missile: Missile, now: Long, graphics: GraphicsContext) {
-        graphics.save()
-
-        graphics.apply {
-            fill = Color.WHITE
-        }
-
-        graphics.translate(missile.pos.x, missile.pos.y)
-        graphics.fillOval(-1.0, -1.0, 2.0, 2.0)
-
-        graphics.restore()
+        restore()
 
         if ((now - missile.born).toDuration(DurationUnit.NANOSECONDS).inSeconds > 3) kill(missile)
     }
@@ -129,38 +104,30 @@ class Game : Application() {
         missile.pos = missile.pos.add(missile.velocity)
     }
 
-    private fun drawAsteroids(canvas: Canvas, space: Space) {
+    private fun drawAsteroids(stencil: Stencil, space: Space) {
         for (asteroid in asteroids) {
-            draw(asteroid, canvas)
+            draw(asteroid, stencil)
             moveAsteroid(asteroid, space)
         }
     }
 
-    private fun draw(asteroid: Asteroid, canvas: Canvas): Unit = draw(asteroid, canvas.graphicsContext2D)
+    private fun draw(asteroid: Asteroid, stencil: Stencil) = stencil {
+        fill = Color.TRANSPARENT
+        stroke = Color.WHITE
+        lineWidth = 1.0 / asteroid.scale
 
-    private fun draw(asteroid: Asteroid, graphics: GraphicsContext) {
-        graphics.save()
+        translate(asteroid.pos.x, asteroid.pos.y)
+        scale(asteroid.scale, asteroid.scale)
 
-        graphics.apply {
-            fill = Color.TRANSPARENT
-            stroke = Color.WHITE
-            lineWidth = 1.0 / asteroid.scale
-        }
-
-        graphics.translate(asteroid.pos.x, asteroid.pos.y)
-        graphics.scale(asteroid.scale, asteroid.scale)
-
-        graphics.beginPath()
+        beginPath()
         asteroid.shape.forEachIndexed { index, vertex ->
             when (index) {
-                0 -> graphics.moveTo(vertex.x, vertex.y)
-                else -> graphics.lineTo(vertex.x, vertex.y)
+                0 -> moveTo(vertex.x, vertex.y)
+                else -> lineTo(vertex.x, vertex.y)
             }
         }
-        graphics.closePath()
-        graphics.stroke()
-
-        graphics.restore()
+        closePath()
+        stroke()
     }
 
     private fun moveAsteroid(asteroid: Asteroid, space: Space) = asteroid.update(space)
@@ -183,31 +150,25 @@ class Game : Application() {
         splats += Splat(pos, born = now, shape = splat, angle = Random.nextDouble(360.0))
     }
 
-    private fun drawSplats(now: Long, canvas: Canvas) {
-        for (splat in splats.toTypedArray()) draw(splat, now, canvas)
+    private fun drawSplats(now: Long, stencil: Stencil) {
+        for (splat in splats.toTypedArray()) draw(splat, now, stencil)
     }
 
-    private fun draw(splat: Splat, now: Long, canvas: Canvas): Unit = draw(splat, now, canvas.graphicsContext2D)
+    private fun draw(splat: Splat, now: Long, stencil: Stencil) = stencil {
+        fill = Color.WHITE
 
-    private fun draw(splat: Splat, now: Long, graphics: GraphicsContext) {
-        graphics.save()
-
-        graphics.apply {
-            fill = Color.WHITE
-        }
-
-        graphics.translate(splat.pos.x, splat.pos.y)
-        graphics.scale(2.0, 2.0)
-        graphics.rotate(splat.angle)
+        translate(splat.pos.x, splat.pos.y)
+        scale(2.0, 2.0)
+        rotate(splat.angle)
 
         val size = 1 + (now - splat.born).toDuration(DurationUnit.NANOSECONDS).inSeconds
         splat.shape.forEach { point ->
-            graphics.fillOval(point.x * size, point.y * size, 2 / size, 2 / size)
+            fillOval(point.x * size, point.y * size, 2 / size, 2 / size)
         }
 
         if (size > 5) kill(splat)
 
-        graphics.restore()
+        restore()
     }
 
     private fun kill(asteroid: Asteroid) {
@@ -237,6 +198,5 @@ class Game : Application() {
         fun main(vararg args: String) {
             launch(Game::class.java, *args)
         }
-
     }
 }
