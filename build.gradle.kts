@@ -1,7 +1,7 @@
 plugins {
     application
-    kotlin("jvm") version "1.4.32"
-    id("org.openjfx.javafxplugin") version "0.0.9"
+    kotlin("jvm") version "1.7.22"
+    id("org.openjfx.javafxplugin") version "0.0.13"
 }
 
 group = "com.vtence.asteroids"
@@ -14,8 +14,8 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     testImplementation(kotlin("test-junit5"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
 }
 
 tasks.test {
@@ -23,7 +23,7 @@ tasks.test {
 }
 
 javafx {
-    version = "15.0.1"
+    version = "17.0.1"
     modules("javafx.controls")
 }
 
