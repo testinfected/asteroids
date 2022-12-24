@@ -17,9 +17,9 @@ val Bounds.center get() = Vector(centerX, centerY)
 val Bounds.max get() = v(maxX, maxY)
 
 val Canvas.stencil: Stencil
-    get() = { composition ->
+    get() = { rendering ->
         graphicsContext2D.save()
-        composition(graphicsContext2D)
+        rendering(graphicsContext2D)
         graphicsContext2D.restore()
     }
 
