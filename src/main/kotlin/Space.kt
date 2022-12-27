@@ -5,13 +5,13 @@ import kotlin.time.Duration.Companion.seconds
 
 class Space(
     private val bounds: Bounds,
-    private val inputs: Inputs,
+    inputs: Inputs,
 ) {
     private val asteroids = spawnAsteroids().toMutableList()
     private val missiles = mutableListOf<Missile>()
     private val splats = mutableListOf<Splat>()
 
-    private val ship: Ship = Ship.spawnAt(pos = center, inputs = inputs)
+    private val ship = Ship.spawnAt(pos = center, inputs = inputs)
         .also {
             it.listeners += object : ShipEventListener {
                 override fun missileFired(missile: Missile) {
@@ -19,6 +19,8 @@ class Space(
                 }
             }
     }
+
+    private val scoreBoard = ScoreBoard.positionedAt(Vector(10.0, 50.0))
 
     private val center
         get() = bounds.center
@@ -64,10 +66,15 @@ class Space(
                     splats += splat
                     kill(asteroid)
                     kill(missile)
+                    updateScore(asteroid)
                     return@missile
                 }
             }
         }
+    }
+
+    private fun updateScore(asteroid: Asteroid) {
+        scoreBoard.inc(asteroid.score())
     }
 
     private fun updateSplats(now: Long) {
@@ -83,6 +90,7 @@ class Space(
         drawAsteroids(stencil)
         drawMissiles(stencil)
         drawSplats(stencil)
+        drawScoreBoard(stencil)
     }
 
     private fun clear(stencil: Stencil) = stencil {
@@ -104,6 +112,10 @@ class Space(
 
     private fun drawSplats(stencil: Stencil) {
         for (splat in splats) splat.draw(stencil)
+    }
+
+    private fun drawScoreBoard(stencil: Stencil) {
+        scoreBoard.draw(stencil)
     }
 
     private fun kill(asteroid: Asteroid) {

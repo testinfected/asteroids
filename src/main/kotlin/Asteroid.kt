@@ -56,6 +56,15 @@ class Asteroid(
         return pos.distance(this.pos)
     }
 
+    // we could pass in a scoring function size -> Score
+    fun score(): Score {
+        return when(scale) {
+            16.0 -> Score(20)
+            8.0 -> Score(50)
+            else -> Score(100)
+        }
+    }
+
     companion object {
         fun spawnAt(pos: Vector, scale: Double) = Asteroid(
             pos,
