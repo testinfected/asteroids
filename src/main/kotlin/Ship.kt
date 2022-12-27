@@ -11,12 +11,16 @@ interface ShipEventListener {
 }
 
 
-class Ship(private var pos: Vector, private var angle: Double = 0.0) {
+class Ship(
+    private var pos: Vector,
+    private var angle: Double = 0.0,
+    private val inputs: Inputs,
+) {
     val listeners = mutableListOf<ShipEventListener>()
 
     private var isFiring = false
 
-    fun handleInputs(inputs: Inputs, now: Long) {
+    fun update(now: Long) {
         if (KeyCode.RIGHT in inputs) rotateRight()
         if (KeyCode.LEFT in inputs) rotateLeft()
         if (KeyCode.SPACE in inputs) fireMissile(now)
@@ -66,7 +70,7 @@ class Ship(private var pos: Vector, private var angle: Double = 0.0) {
         private const val dx = 10.0
         private const val dy = 6.0
 
-        fun spawnAt(pos: Vector) = Ship(pos)
+        fun spawnAt(pos: Vector, inputs: Inputs) = Ship(pos, inputs = inputs)
     }
 }
 

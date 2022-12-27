@@ -1,20 +1,23 @@
 import javafx.geometry.Bounds
-import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlin.time.Duration.Companion.seconds
 
-class Space(private val bounds: Bounds) {
+class Space(
+    private val bounds: Bounds,
+    private val inputs: Inputs,
+) {
     private val asteroids = spawnAsteroids().toMutableList()
     private val missiles = mutableListOf<Missile>()
     private val splats = mutableListOf<Splat>()
 
-    private val ship: Ship = Ship.spawnAt(pos = center).also {
-        it.listeners += object : ShipEventListener {
-            override fun missileFired(missile: Missile) {
-                missiles += missile
+    private val ship: Ship = Ship.spawnAt(pos = center, inputs = inputs)
+        .also {
+            it.listeners += object : ShipEventListener {
+                override fun missileFired(missile: Missile) {
+                    missiles += missile
+                }
             }
-        }
     }
 
     private val center
@@ -26,15 +29,16 @@ class Space(private val bounds: Bounds) {
 
     private fun randomLocation() = randomLocationWithin(bounds)
 
-    fun handleInputs(inputs: Inputs, now: Long) {
-        ship.handleInputs(inputs, now)
-    }
-
     fun update(now: Long) {
+        updateShip(now)
         updateAsteroids(now)
         updateMissiles(now)
         findCollisions(now)
         updateSplats(now)
+    }
+
+    private fun updateShip(now: Long) {
+        ship.update(now)
     }
 
     private fun updateAsteroids(now: Long) {

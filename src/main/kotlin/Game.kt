@@ -5,36 +5,38 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.canvas.Canvas
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.stage.Stage
 import kotlin.time.ExperimentalTime
 
 
-class Inputs {
+fun interface Inputs {
+    operator fun contains(key: KeyCode): Boolean
+}
+
+class Keys : Inputs {
     private val keys = mutableSetOf<KeyCode>()
 
-    operator fun contains(key: KeyCode) = key in keys
+    override operator fun contains(key: KeyCode) = key in keys
 
-    operator fun plusAssign(key: KeyCode) {
-        if (key !in keys) keys.add(key)
-    }
+    val pressed: EventHandler<in KeyEvent>
+        get() = EventHandler { if (it.code !in keys) keys.add(it.code) }
 
-    operator fun minusAssign(key: KeyCode) {
-        keys.remove(key)
-    }
+    val released: EventHandler<in KeyEvent>
+        get() = EventHandler { keys.remove(it.code) }
 }
 
 @ExperimentalTime
 class Game : Application() {
 
-    val inputs = Inputs()
+    private val keys = Keys()
 
     override fun start(stage: Stage) {
         val canvas = set(stage)
-        val space = Space(bounds = canvas.layoutBounds)
+        val space = Space(bounds = canvas.layoutBounds, inputs = keys)
 
         val timer = object : AnimationTimer() {
             override fun handle(now: Long) {
-                space.handleInputs(inputs, now)
                 space.update(now)
                 space.draw(canvas.stencil)
             }
@@ -49,8 +51,8 @@ class Game : Application() {
         val scene = Scene(Group(canvas))
         stage.title = "Asteroids"
         stage.scene = scene
-        scene.onKeyPressed = EventHandler { inputs += it.code }
-        scene.onKeyReleased = EventHandler { inputs -= it.code }
+        scene.onKeyPressed = keys.pressed
+        scene.onKeyReleased = keys.released
 
         return canvas
     }
