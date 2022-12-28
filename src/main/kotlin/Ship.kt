@@ -1,7 +1,6 @@
 import javafx.geometry.Bounds
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
-import javafx.scene.transform.Rotate
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -19,14 +18,11 @@ class Ship(
 ) {
     val listeners = mutableListOf<ShipEventListener>()
 
-    private var velocity = Vector.ZERO
+    private var velocity = velocity(0.0)
     private var isFiring = false
 
-    private val orientation: Rotate
-        get() = Rotate(angle)
-
-    private val front: Vector
-        get() = pos + orientation.transform(v(dx, 0.0))
+    private val nosePosition: Vector
+        get() = pos + v(dx, 0.0).rotate(angle)
 
     fun update(now: Long) {
         if (KeyCode.RIGHT in inputs) rotateRight()
@@ -39,7 +35,7 @@ class Ship(
     }
 
     private fun accelerate() {
-        velocity = (velocity + orientation.transform(acceleration)).cappedTo(maxVelocity)
+        velocity = (velocity + velocity(acceleration).rotate(angle)).cappedTo(maxVelocity)
     }
 
     private fun moveShip() {
@@ -74,8 +70,10 @@ class Ship(
         if (isFiring) return
 
         isFiring = true
-        notifyFired(Missile(front, orientation.transform(missileSpeed) + velocity, born = now))
+        notifyFired(Missile(nosePosition, missileVelocity(), born = now))
     }
+
+    private fun missileVelocity() = velocity(missileSpeed).rotate(angle) + velocity
 
     private fun holdFire() {
         isFiring = false
@@ -93,8 +91,8 @@ class Ship(
         private const val dx = 10.0
         private const val dy = 6.0
         private const val maxVelocity = 3.0
-        private val acceleration = v(0.015, 0.0)
-        private val missileSpeed = v(2, 0)
+        private const val acceleration = 0.015
+        private const val missileSpeed = 2.0
 
         fun spawnAt(pos: Vector, inputs: Inputs) = Ship(pos, inputs = inputs)
     }

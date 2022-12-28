@@ -59,19 +59,27 @@ class Space(
     }
 
     private fun findCollisions(now: Long) {
-        missiles.toTypedArray().forEach missile@{ missile ->
-            asteroids.forEach { asteroid ->
-                if (missile.hits(asteroid)) {
-                    val (parts, splat) = asteroid.split(now)
-                    asteroids += parts
-                    splats += splat
-                    kill(asteroid)
-                    kill(missile)
-                    updateScore(asteroid)
-                    return@missile
-                }
+        asteroids.toList().forEach asteroid@ { asteroid ->
+            missiles.toList().forEach { missile ->
+                if (asteroid.isDead) return@asteroid
+                missile.checkCollisionWith(asteroid, now)
             }
         }
+    }
+
+    private fun Missile.checkCollisionWith(asteroid: Asteroid, now: Long) {
+        if (hits(asteroid)) {
+            asteroid.explode(now)
+            kill(this)
+        }
+    }
+
+    private fun Asteroid.explode(now: Long) {
+        val (parts, splat) = split(now)
+        asteroids += parts
+        splats += splat
+        kill(this)
+        updateScore(this)
     }
 
     private fun updateScore(asteroid: Asteroid) {
@@ -81,7 +89,7 @@ class Space(
     private fun updateSplats(now: Long) {
         for (splat in splats.toTypedArray()) {
             splat.update(now)
-            if (splat.biggerThan(maxSplatSize)) kill(splat)
+            if (splat.shouldDie(now)) kill(splat)
         }
     }
 
@@ -131,11 +139,13 @@ class Space(
         missiles -= missile
     }
 
-    companion object {
-        const val maxSplatSize = 5.0
-        val grey: Paint = Color.rgb(40, 40, 50)
-        val missileLifetime = 3.seconds
+    private val Asteroid.isDead
+        get() = this !in asteroids
 
+    companion object {
+        val grey: Paint = Color.rgb(40, 40, 50)
+
+        val missileLifetime = 3.seconds
     }
 }
 

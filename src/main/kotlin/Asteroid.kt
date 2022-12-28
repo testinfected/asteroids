@@ -1,6 +1,5 @@
 import javafx.geometry.Bounds
 import javafx.scene.paint.Color
-import javafx.scene.transform.Rotate
 import kotlin.random.Random
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -16,9 +15,9 @@ class Asteroid(
     }
 
     fun split(now: Long): Pair<Iterable<Asteroid>, Splat> {
-        val splat = Splat(pos, born = now, shape = splatShape, angle = Random.nextDouble(360.0))
+        val splat = Splat(pos, born = now, shape = splatShape, angle = randomAngle())
 
-        if (scale == 4.0) {
+        if (scale == maxSize) {
             return emptyList<Asteroid>() to splat
         }
 
@@ -52,7 +51,7 @@ class Asteroid(
         stroke()
     }
 
-    // we could pass in a scoring function size -> Score
+    // we could pass in a scoring function size -> Score or use a scoring table
     fun score(): Score {
         return when(scale) {
             16.0 -> Score(20)
@@ -61,8 +60,8 @@ class Asteroid(
         }
     }
 
-    fun collidesWith(pos: Vector): Boolean {
-        val distanceToCenter = pos.distance(this.pos)
+    fun collidesWith(other: Vector): Boolean {
+        val distanceToCenter = other.distance(pos)
 
         return distanceToCenter <= when(scale) {
             16.0 -> 64
@@ -72,11 +71,14 @@ class Asteroid(
     }
 
     companion object {
+        private const val maxSize = 4.0
+        private const val expansionSpeed = 1.5
+
         fun spawnAt(pos: Vector, scale: Double) = Asteroid(
             pos,
             scale,
-            velocity = Rotate(Random.nextDouble(360.0)).transform(v(1.5, 0.0)),
-            shape = rocks[Random.nextInt(4)]
+            velocity = velocity(expansionSpeed).rotate(randomAngle()),
+            shape = rocks[Random.nextInt(rocks.size)]
         )
     }
 }
@@ -90,11 +92,14 @@ class Splat(
     private var size: Double = 1.0
 
     fun update(now: Long) {
-        size = 1 + (now - born).toDuration(DurationUnit.NANOSECONDS).toDouble(DurationUnit.SECONDS)
+        size = 1 + lifeTime(now)
     }
 
-    fun biggerThan(size: Double): Boolean {
-        return this.size > size
+    private fun lifeTime(now: Long) =
+        (now - born).toDuration(DurationUnit.NANOSECONDS).toDouble(DurationUnit.SECONDS)
+
+    fun shouldDie(now: Long): Boolean {
+        return lifeTime(now) > maxLifeTime
     }
 
     fun draw(stencil: Stencil) = stencil {
@@ -107,6 +112,10 @@ class Splat(
         shape.forEach { point ->
             fillOval(point.x * size, point.y * size, 2 / size, 2 / size)
         }
+    }
+
+    companion object {
+        private const val maxLifeTime = 4.0
     }
 }
 
