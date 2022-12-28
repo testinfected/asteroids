@@ -73,6 +73,10 @@ class Ship(
         isFiring = false
     }
 
+    fun hits(asteroid: Asteroid): Boolean {
+        return asteroid.collidesWith(pos)
+    }
+
     fun keepInBounds(bounds: Bounds) {
         pos = pos.warp(bounds.max)
     }

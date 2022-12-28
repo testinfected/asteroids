@@ -53,15 +53,32 @@ class Space(
     }
 
     private fun findCollisions(now: Long) {
-        asteroids.toList().forEach asteroid@ { asteroid ->
-            missiles.toList().forEach { missile ->
-                if (asteroid.isDead) return@asteroid
-                missile.checkCollisionWith(asteroid, now)
-            }
+        asteroids.toList().forEach { asteroid ->
+            checkMissileCollision(asteroid, now)
+            checkShipCollision(asteroid, now)
         }
     }
 
+    private fun checkMissileCollision(asteroid: Asteroid, now: Long) {
+        missiles.toList().forEach { missile ->
+            if (asteroid.isDead) return
+            missile.checkCollisionWith(asteroid, now)
+        }
+    }
+
+    private fun checkShipCollision(asteroid: Asteroid, now: Long) {
+        if (asteroid.isDead) return
+        ship.checkCollisionWith(asteroid, now)
+    }
+
     private fun Missile.checkCollisionWith(asteroid: Asteroid, now: Long) {
+        if (hits(asteroid)) {
+            asteroid.explode(now)
+            kill(this)
+        }
+    }
+
+    private fun Ship.checkCollisionWith(asteroid: Asteroid, now: Long) {
         if (hits(asteroid)) {
             asteroid.explode(now)
             kill(this)
@@ -125,6 +142,10 @@ class Space(
         when (event) {
             is MissileFired -> born(event.missile)
         }
+    }
+
+    private fun kill(ship: Ship) {
+
     }
 
     private fun born(missile: Missile) {
