@@ -12,7 +12,7 @@ class Asteroid(
     private val shape: Array<Vector>
 ) {
     fun update(now: Long) {
-        pos = pos.add(velocity)
+        pos += velocity
     }
 
     fun split(now: Long): Pair<Iterable<Asteroid>, Splat> {
@@ -29,7 +29,7 @@ class Asteroid(
         return parts to splat
     }
 
-    fun wrap(bounds: Bounds) {
+    fun keepInBounds(bounds: Bounds) {
         pos = pos.warp(bounds.max)
     }
 
@@ -52,10 +52,6 @@ class Asteroid(
         stroke()
     }
 
-    fun distanceTo(pos: Vector): Double {
-        return pos.distance(this.pos)
-    }
-
     // we could pass in a scoring function size -> Score
     fun score(): Score {
         return when(scale) {
@@ -65,11 +61,21 @@ class Asteroid(
         }
     }
 
+    fun collidesWith(pos: Vector): Boolean {
+        val distanceToCenter = pos.distance(this.pos)
+
+        return distanceToCenter <= when(scale) {
+            16.0 -> 64
+            8.0 -> 32
+            else -> 16
+        }
+    }
+
     companion object {
         fun spawnAt(pos: Vector, scale: Double) = Asteroid(
             pos,
             scale,
-            velocity = Rotate(Random.nextDouble(360.0)).transform(Vector(1.5, 0.0)),
+            velocity = Rotate(Random.nextDouble(360.0)).transform(v(1.5, 0.0)),
             shape = rocks[Random.nextInt(4)]
         )
     }

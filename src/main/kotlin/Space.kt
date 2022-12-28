@@ -41,12 +41,13 @@ class Space(
 
     private fun updateShip(now: Long) {
         ship.update(now)
+        ship.keepInBounds(bounds)
     }
 
     private fun updateAsteroids(now: Long) {
         for (asteroid in asteroids) {
             asteroid.update(now)
-            asteroid.wrap(bounds)
+            asteroid.keepInBounds(bounds)
         }
     }
 

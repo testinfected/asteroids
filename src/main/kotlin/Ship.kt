@@ -1,3 +1,4 @@
+import javafx.geometry.Bounds
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import javafx.scene.transform.Rotate
@@ -18,13 +19,31 @@ class Ship(
 ) {
     val listeners = mutableListOf<ShipEventListener>()
 
+    private var velocity = Vector.ZERO
     private var isFiring = false
+
+    private val orientation: Rotate
+        get() = Rotate(angle)
+
+    private val front: Vector
+        get() = pos + orientation.transform(v(dx, 0.0))
 
     fun update(now: Long) {
         if (KeyCode.RIGHT in inputs) rotateRight()
         if (KeyCode.LEFT in inputs) rotateLeft()
         if (KeyCode.SPACE in inputs) fireMissile(now)
         if (KeyCode.SPACE !in inputs) holdFire()
+        if (KeyCode.UP in inputs) accelerate()
+
+        moveShip()
+    }
+
+    private fun accelerate() {
+        velocity = (velocity + orientation.transform(acceleration)).cappedTo(maxVelocity)
+    }
+
+    private fun moveShip() {
+        pos += velocity
     }
 
     fun draw(stencil: Stencil) = stencil {
@@ -55,7 +74,7 @@ class Ship(
         if (isFiring) return
 
         isFiring = true
-        notifyFired(Missile(pos, Rotate(angle).transform(v(2, 0)), born = now))
+        notifyFired(Missile(front, orientation.transform(missileSpeed) + velocity, born = now))
     }
 
     private fun holdFire() {
@@ -66,19 +85,30 @@ class Ship(
         listeners.forEach { it.missileFired(missile) }
     }
 
+    fun keepInBounds(bounds: Bounds) {
+        pos = pos.warp(bounds.max)
+    }
+
     companion object {
         private const val dx = 10.0
         private const val dy = 6.0
+        private const val maxVelocity = 3.0
+        private val acceleration = v(0.015, 0.0)
+        private val missileSpeed = v(2, 0)
 
         fun spawnAt(pos: Vector, inputs: Inputs) = Ship(pos, inputs = inputs)
     }
 }
 
-class Missile(private var pos: Vector, private val velocity: Vector, val born: Long) {
+class Missile(
+    private var pos: Vector,
+    private val velocity: Vector,
+    val born: Long,
+) {
     private var age: Duration = Duration.ZERO
 
     fun update(now: Long) {
-        pos = pos.add(velocity)
+        pos += velocity
         age = (now - born).toDuration(DurationUnit.NANOSECONDS)
     }
 
@@ -89,14 +119,10 @@ class Missile(private var pos: Vector, private val velocity: Vector, val born: L
     }
 
     fun hits(asteroid: Asteroid): Boolean {
-        return asteroid.distanceTo(pos) < killDistance
+        return asteroid.collidesWith(pos)
     }
 
     fun olderThan(duration: Duration): Boolean {
         return age > duration
-    }
-
-    companion object {
-        const val killDistance = 50.0
     }
 }
