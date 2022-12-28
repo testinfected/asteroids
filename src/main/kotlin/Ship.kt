@@ -2,6 +2,7 @@ import javafx.geometry.Bounds
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -97,11 +98,16 @@ class Missile(
     private val velocity: Vector,
     val born: Long,
 ) {
-    private var age: Duration = Duration.ZERO
-
     fun update(now: Long) {
         pos += velocity
-        age = (now - born).toDuration(DurationUnit.NANOSECONDS)
+    }
+
+    fun shouldDie(now: Long): Boolean {
+        return age(now) > maxLifeTime
+    }
+
+    private fun age(now: Long): Duration {
+        return (now - born).toDuration(DurationUnit.NANOSECONDS)
     }
 
     fun draw(stencil: Stencil) = stencil {
@@ -114,7 +120,7 @@ class Missile(
         return asteroid.collidesWith(pos)
     }
 
-    fun olderThan(duration: Duration): Boolean {
-        return age > duration
+    companion object {
+        private val maxLifeTime = 3.seconds
     }
 }

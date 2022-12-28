@@ -1,6 +1,7 @@
 import javafx.geometry.Bounds
 import javafx.scene.paint.Color
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -92,14 +93,13 @@ class Splat(
     private var size: Double = 1.0
 
     fun update(now: Long) {
-        size = 1 + lifeTime(now)
+        size = 1 + age(now).toDouble(DurationUnit.SECONDS)
     }
 
-    private fun lifeTime(now: Long) =
-        (now - born).toDuration(DurationUnit.NANOSECONDS).toDouble(DurationUnit.SECONDS)
+    private fun age(now: Long) = (now - born).toDuration(DurationUnit.NANOSECONDS)
 
     fun shouldDie(now: Long): Boolean {
-        return lifeTime(now) > maxLifeTime
+        return age(now) > maxLifeTime
     }
 
     fun draw(stencil: Stencil) = stencil {
@@ -115,7 +115,7 @@ class Splat(
     }
 
     companion object {
-        private const val maxLifeTime = 4.0
+        private val maxLifeTime = 4.seconds
     }
 }
 

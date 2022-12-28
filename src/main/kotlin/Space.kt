@@ -48,7 +48,7 @@ class Space(
     private fun updateMissiles(now: Long) {
         for (missile in missiles.toTypedArray()) {
             missile.update(now)
-            if (missile.olderThan(missileLifetime)) kill(missile)
+            if (missile.shouldDie(now)) kill(missile)
         }
     }
 
@@ -169,8 +169,6 @@ class Space(
 
     companion object {
         val grey: Paint = Color.rgb(40, 40, 50)
-
-        val missileLifetime = 3.seconds
     }
 }
 
