@@ -12,13 +12,7 @@ class Space(
     private val splats = mutableListOf<Splat>()
 
     private val ship = Ship.spawnAt(pos = center, inputs = inputs)
-        .also {
-            it.listeners += object : ShipEventListener {
-                override fun missileFired(missile: Missile) {
-                    missiles += missile
-                }
-            }
-    }
+        .also { ship ->  ship.signals += { handleEvent(it) } }
 
     private val scoreBoard = ScoreBoard.positionedAt(Vector(10.0, 50.0))
 
@@ -125,6 +119,16 @@ class Space(
 
     private fun drawScoreBoard(stencil: Stencil) {
         scoreBoard.draw(stencil)
+    }
+
+    private fun handleEvent(event: GameEvent) {
+        when (event) {
+            is MissileFired -> born(event.missile)
+        }
+    }
+
+    private fun born(missile: Missile) {
+        missiles += missile
     }
 
     private fun kill(asteroid: Asteroid) {

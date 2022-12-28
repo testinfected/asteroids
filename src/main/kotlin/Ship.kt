@@ -6,17 +6,12 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 
-interface ShipEventListener {
-    fun missileFired(missile: Missile)
-}
-
-
 class Ship(
     private var pos: Vector,
     private var angle: Double = 0.0,
     private val inputs: Inputs,
 ) {
-    val listeners = mutableListOf<ShipEventListener>()
+    val signals = Signaler()
 
     private var velocity = velocity(0.0)
     private var isFiring = false
@@ -70,17 +65,12 @@ class Ship(
         if (isFiring) return
 
         isFiring = true
-        notifyFired(Missile(nosePosition, missileVelocity(), born = now))
+        val missile = Missile(nosePosition, velocity(missileSpeed).rotate(angle) + velocity, born = now)
+        signals.announce(MissileFired(missile))
     }
-
-    private fun missileVelocity() = velocity(missileSpeed).rotate(angle) + velocity
 
     private fun holdFire() {
         isFiring = false
-    }
-
-    private fun notifyFired(missile: Missile) {
-        listeners.forEach { it.missileFired(missile) }
     }
 
     fun keepInBounds(bounds: Bounds) {

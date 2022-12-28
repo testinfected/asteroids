@@ -26,6 +26,25 @@ class Keys : Inputs {
         get() = EventHandler { keys.remove(it.code) }
 }
 
+
+sealed class GameEvent
+
+data class MissileFired(val missile: Missile) : GameEvent()
+
+typealias GameEventListener = (GameEvent) -> Unit
+
+class Signaler {
+    private val subscribers = mutableListOf<GameEventListener>()
+
+    operator fun plusAssign(subscriber: GameEventListener) {
+        subscribers += subscriber
+    }
+
+    fun announce(event: GameEvent) {
+        subscribers.forEach { it(event) }
+    }
+}
+
 @ExperimentalTime
 class Game : Application() {
 
