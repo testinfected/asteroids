@@ -12,6 +12,8 @@ fun velocity(speed: Double) = Vector(speed, 0.0)
 
 operator fun Vector.plus(other: Vector): Vector = add(other)
 
+operator fun Vector.minus(other: Vector): Vector = subtract(other)
+
 fun Vector.rotate(degrees: Double) = Rotate(degrees).transform(this)
 
 fun Vector.warp(bounds: Vector): Vector {

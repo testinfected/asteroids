@@ -55,11 +55,11 @@ class Ship(
     }
 
     private fun rotateRight() {
-        angle += 1
+        angle += rotationSpeed
     }
 
     private fun rotateLeft() {
-        angle -= 1
+        angle -= rotationSpeed
     }
 
     private fun fireMissile(now: Long) {
@@ -87,6 +87,7 @@ class Ship(
         private const val dy = 6.0
         private const val maxVelocity = 3.0
         private const val acceleration = 0.015
+        private const val rotationSpeed = 1.0
         private const val missileSpeed = 2.0
 
         fun spawnAt(pos: Vector, inputs: Inputs) = Ship(pos, inputs = inputs)

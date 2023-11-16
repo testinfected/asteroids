@@ -1,29 +1,43 @@
 import javafx.geometry.Bounds
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlin.time.Duration.Companion.seconds
 
 class Space(
     private val bounds: Bounds,
-    inputs: Inputs,
+    private val inputs: Inputs,
 ) {
-    private val asteroids = spawnAsteroids().toMutableList()
+    private val ships = mutableListOf<Ship>()
+    private val asteroids = mutableListOf<Asteroid>()
     private val missiles = mutableListOf<Missile>()
     private val splats = mutableListOf<Splat>()
-
-    private val ship = Ship.spawnAt(pos = center, inputs = inputs)
-        .also { ship ->  ship.signals += { handleEvent(it) } }
 
     private val scoreBoard = ScoreBoard.positionedAt(Vector(10.0, 50.0))
 
     private val center
         get() = bounds.center
 
-    private fun spawnAsteroids(): List<Asteroid> {
-        return (1..4).map { Asteroid.spawnAt(randomLocation(), 16.0) }
+    init {
+        newAsteroidsWave()
     }
 
+    private fun waveSize() = 4
+
     private fun randomLocation() = randomLocationWithin(bounds)
+
+    private fun newAsteroidsWave() {
+        asteroids.clear()
+        repeat(waveSize()) { asteroids += Asteroid.spawnAt(randomLocation(), 16.0) }
+    }
+
+    private fun spawnShip() {
+        ships.clear()
+        ships += Ship.spawnAt(pos = center, inputs = inputs).apply { signals += { handleEvent(it) } }
+    }
+
+    fun start(now: Long) {
+        newAsteroidsWave();
+        spawnShip()
+    }
 
     fun update(now: Long) {
         updateShip(now)
@@ -34,8 +48,10 @@ class Space(
     }
 
     private fun updateShip(now: Long) {
-        ship.update(now)
-        ship.keepInBounds(bounds)
+        ships.forEach {
+            it.update(now)
+            it.keepInBounds(bounds)
+        }
     }
 
     private fun updateAsteroids(now: Long) {
@@ -67,8 +83,10 @@ class Space(
     }
 
     private fun checkShipCollision(asteroid: Asteroid, now: Long) {
-        if (asteroid.isDead) return
-        ship.checkCollisionWith(asteroid, now)
+        ships.toList().forEach {
+            if (asteroid.isDead) return
+            it.checkCollisionWith(asteroid, now)
+        }
     }
 
     private fun Missile.checkCollisionWith(asteroid: Asteroid, now: Long) {
@@ -119,7 +137,7 @@ class Space(
     }
 
     private fun drawShip(stencil: Stencil) {
-        ship.draw(stencil)
+        ships.forEach { it.draw(stencil) }
     }
 
     private fun drawAsteroids(stencil: Stencil) {
@@ -145,7 +163,7 @@ class Space(
     }
 
     private fun kill(ship: Ship) {
-
+        this.ships -= ship
     }
 
     private fun born(missile: Missile) {
@@ -168,6 +186,7 @@ class Space(
         get() = this !in asteroids
 
     companion object {
+
         val grey: Paint = Color.rgb(40, 40, 50)
     }
 }
